@@ -46,7 +46,7 @@ DMA_HandleTypeDef hdma_usart2_tx;
 
 /* USER CODE BEGIN PV */
 uint8_t RxBuffer[2];
-uint8_t TxBuffer[60];
+uint8_t TxBuffer[150];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -55,7 +55,10 @@ static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
-
+void UARTDMAConfig();
+void LEDBlinkTimer();
+void LEDandButtonStatus();
+void B1ButtonStatus();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -107,6 +110,11 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   UARTDMAConfig();
+  RxBuffer[1] = '\0';
+  sprintf((char*)TxBuffer, "Please Select 0 or 1 \r\n"
+		  "-------------------------------- %s\r\n"
+		  ,RxBuffer);
+  HAL_UART_Transmit_DMA(&huart2, TxBuffer, strlen((char*)TxBuffer));
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -114,6 +122,7 @@ int main(void)
   while (1)
   {
 	  LEDBlinkTimer();
+	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
 	  if(d_case == 0)
 	  {
 		  LEDBlinkTimer();
@@ -244,7 +253,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0|LD2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
@@ -252,12 +261,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : LD2_Pin */
-  GPIO_InitStruct.Pin = LD2_Pin;
+  /*Configure GPIO pins : PA0 LD2_Pin */
+  GPIO_InitStruct.Pin = GPIO_PIN_0|LD2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 }
 
@@ -282,7 +291,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 			case 'a' :
 				memset(UARTDMAConfig, 0, sizeof(TxBuffer));
 				frequency += 1;
-
 				a += 1;
 				if(a == 1)
 				{
@@ -293,15 +301,15 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 					hz += 1;
 				}
 				RxBuffer[1] = '\0';
-				sprintf((char*)TxBuffer, "frequency(Hz) = %d\r\n",hz);
+				sprintf((char*)TxBuffer, "frequency(Hz) = %d\r\n-------------------------------- \r\n",hz);
 				HAL_UART_Transmit_DMA(&huart2, TxBuffer, strlen((char*)TxBuffer));
 				break;
 			case 's' :
 				memset(UARTDMAConfig, 0, sizeof(TxBuffer));
 				frequency -= 1;
-				if(frequency < 0)
+				if(frequency < 1)
 				{
-					frequency = 0;
+					frequency = 1;
 				}
 				hz -= 1;
 				if(hz < 0)
@@ -309,7 +317,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 					hz = 0;
 				}
 				RxBuffer[1] = '\0';
-				sprintf((char*)TxBuffer, "frequency(Hz) = %d\r\n",hz);
+				sprintf((char*)TxBuffer, "frequency(Hz) = %d\r\n-------------------------------- \r\n",hz);
 				HAL_UART_Transmit_DMA(&huart2, TxBuffer, strlen((char*)TxBuffer));
 				break;
 			case 'd' :
@@ -319,21 +327,21 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 				{
 					d_case = 0;
 					RxBuffer[1] = '\0';
-					sprintf((char*)TxBuffer, "LED is ON %s\r\n",RxBuffer);
+					sprintf((char*)TxBuffer, "LED is ON %s\r\n-------------------------------- \r\n",RxBuffer);
 					HAL_UART_Transmit_DMA(&huart2, TxBuffer, strlen((char*)TxBuffer));
 				}
 				else if(count%2 == 1)
 				{
 					d_case = 1;
 					RxBuffer[1] = '\0';
-					sprintf((char*)TxBuffer, "LED is OFF %s\r\n",RxBuffer);
+					sprintf((char*)TxBuffer, "LED is OFF %s\r\n-------------------------------- \r\n",RxBuffer);
 					HAL_UART_Transmit_DMA(&huart2, TxBuffer, strlen((char*)TxBuffer));
 				}
 				break;
 			case 'x' :
 				memset(UARTDMAConfig, 0, sizeof(TxBuffer));
 				RxBuffer[1] = '\0';
-				sprintf((char*)TxBuffer, "Back to menu, Please Select 0 or 1 %s\r\n",RxBuffer);
+				sprintf((char*)TxBuffer, "Back to menu, Please Select 0 or 1 %s\r\n-------------------------------- \r\n",RxBuffer);
 				HAL_UART_Transmit_DMA(&huart2, TxBuffer, strlen((char*)TxBuffer));
 				Menu = 3;
 				break;
@@ -348,7 +356,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 			case 'x' :
 				memset(UARTDMAConfig, 0, sizeof(TxBuffer));
 				RxBuffer[1] = '\0';
-				sprintf((char*)TxBuffer, "Back to menu, Please Select 0 or 1 %s\r\n",RxBuffer);
+				sprintf((char*)TxBuffer, "Back to menu, Please Select 0 or 1 %s\r\n-------------------------------- \r\n",RxBuffer);
 				HAL_UART_Transmit_DMA(&huart2, TxBuffer, strlen((char*)TxBuffer));
 				Menu = 3;
 				break;
@@ -359,7 +367,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 			if(RxBuffer[0] == '0')
 			{
 				Menu = 0;
-				sprintf((char*)TxBuffer, "frequency(Hz) = 1 %s\r\n",RxBuffer);
+				sprintf((char*)TxBuffer,
+						"frequency(Hz) = 1 \r\nPress a for +1hz \r\nPress s for -1hz \r\nPress d for ON/OFF \r\nPress x for Back to menu \r\n-------------------------------- %s\r\n",RxBuffer);
 				HAL_UART_Transmit_DMA(&huart2, TxBuffer, strlen((char*)TxBuffer));
 			}
 			else if(RxBuffer[0] == '1')
@@ -371,7 +380,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		default :
 			memset(UARTDMAConfig, 0, sizeof(TxBuffer));
 			RxBuffer[1] = '\0';
-			sprintf((char*)TxBuffer, "Out of range, Please Select 0 or 1 %s\r\n",RxBuffer);
+			sprintf((char*)TxBuffer, "Out of range, Please Select 0 or 1 %s\r\n-------------------------------- \r\n",RxBuffer);
 			HAL_UART_Transmit_DMA(&huart2, TxBuffer, strlen((char*)TxBuffer));
 			break;
 		}
@@ -380,10 +389,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 //-------------------------------------------------------------------------------------
 void LEDBlinkTimer()
 {
-//	  static uint32_t timestamp = 0;
-//	(2/(1000*frequency)
-//	(1000/(2*frequency)
-
 	  if(HAL_GetTick() >= timestamp)
 	  {
 		  timestamp = HAL_GetTick() + (1000/(2*frequency));
@@ -400,12 +405,12 @@ void B1ButtonStatus()
 		memset(UARTDMAConfig, 0, sizeof(TxBuffer));
 		if(before == 1 && current == 0)
 		{
-			sprintf((char*)TxBuffer, "B1 is Press %s\r\n",RxBuffer);
+			sprintf((char*)TxBuffer, "B1 is Press %d\r\n-------------------------------- \r\n",current);
 			HAL_UART_Transmit_DMA(&huart2, TxBuffer, strlen((char*)TxBuffer));
 		}
 		else if(before == 0 && current == 1)
 		{
-			sprintf((char*)TxBuffer, "B1 is UnPress %s\r\n",RxBuffer);
+			sprintf((char*)TxBuffer, "B1 is UnPress %d\r\n-------------------------------- \r\n",current);
 			HAL_UART_Transmit_DMA(&huart2, TxBuffer, strlen((char*)TxBuffer));
 		}
 		before = current;
