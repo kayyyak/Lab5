@@ -71,7 +71,7 @@ int current = 0;
 int before = 0;
 int check = 0;
 int ButtonStatus = 0;
-uint8_t Menu = 3;
+uint8_t Menu = 2;
 int d_case = 0;
 int hz = 0;
 int frequency = 1;
@@ -327,23 +327,52 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 				{
 					d_case = 0;
 					RxBuffer[1] = '\0';
-					sprintf((char*)TxBuffer, "LED is ON %s\r\n-------------------------------- \r\n",RxBuffer);
+					sprintf((char*)TxBuffer, "LED is ON /%s\r\n-------------------------------- \r\n",RxBuffer);
 					HAL_UART_Transmit_DMA(&huart2, TxBuffer, strlen((char*)TxBuffer));
 				}
 				else if(count%2 == 1)
 				{
 					d_case = 1;
 					RxBuffer[1] = '\0';
-					sprintf((char*)TxBuffer, "LED is OFF %s\r\n-------------------------------- \r\n",RxBuffer);
+					sprintf((char*)TxBuffer, "LED is OFF /%s\r\n-------------------------------- \r\n",RxBuffer);
 					HAL_UART_Transmit_DMA(&huart2, TxBuffer, strlen((char*)TxBuffer));
 				}
 				break;
 			case 'x' :
 				memset(UARTDMAConfig, 0, sizeof(TxBuffer));
 				RxBuffer[1] = '\0';
-				sprintf((char*)TxBuffer, "Back to menu, Please Select 0 or 1 %s\r\n-------------------------------- \r\n",RxBuffer);
+				sprintf((char*)TxBuffer, "Back to menu, Please Select 0 or 1 /%s\r\n-------------------------------- \r\n",RxBuffer);
 				HAL_UART_Transmit_DMA(&huart2, TxBuffer, strlen((char*)TxBuffer));
-				Menu = 3;
+				Menu = 2;
+				break;
+			case 4 :
+				if(RxBuffer[0] == 'a')
+				{
+					LEDcontrol = 'a';
+				}
+				else if(RxBuffer[0] == 's')
+				{
+					LEDcontrol = 's';
+				}
+				else if(RxBuffer[0] == 'd')
+				{
+					LEDcontrol = 'd';
+				}
+				else if(RxBuffer[0] == 'x')
+				{
+					LEDcontrol = 'x';
+				}
+				else
+				{
+					LEDcontrol = '0';
+				}
+				break;
+			default :
+				memset(UARTDMAConfig, 0, sizeof(TxBuffer));
+				RxBuffer[1] = '\0';
+				sprintf((char*)TxBuffer, "Out of range, Please Select a s d or x /%s\r\n-------------------------------- \r\n",RxBuffer);
+				HAL_UART_Transmit_DMA(&huart2, TxBuffer, strlen((char*)TxBuffer));
+				LEDcontrol = 4;
 				break;
 			}
 			break;
@@ -353,35 +382,55 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 			ButtonStatus = RxBuffer[0];
 			switch(ButtonStatus)
 			{
+			case 3 :
+				if(RxBuffer[0] == 'x')
+				{
+					ButtonStatus = 'x';
+				}
+				else
+				{
+					ButtonStatus = '0';
+				}
+				break;
 			case 'x' :
 				memset(UARTDMAConfig, 0, sizeof(TxBuffer));
 				RxBuffer[1] = '\0';
-				sprintf((char*)TxBuffer, "Back to menu, Please Select 0 or 1 %s\r\n-------------------------------- \r\n",RxBuffer);
+				sprintf((char*)TxBuffer, "Back to menu, Please Select 0 or 1 /%s\r\n-------------------------------- \r\n",RxBuffer);
 				HAL_UART_Transmit_DMA(&huart2, TxBuffer, strlen((char*)TxBuffer));
-				Menu = 3;
+				Menu = 2;
+				break;
+			default :
+				memset(UARTDMAConfig, 0, sizeof(TxBuffer));
+				RxBuffer[1] = '\0';
+				sprintf((char*)TxBuffer, "Out of range, Please Press B1 or x /%s\r\n-------------------------------- \r\n",RxBuffer);
+				HAL_UART_Transmit_DMA(&huart2, TxBuffer, strlen((char*)TxBuffer));
+				ButtonStatus = 3;
 				break;
 			}
 			break;
-		case 3 :
+		case 2 :
 			RxBuffer[1] = '\0';
 			if(RxBuffer[0] == '0')
 			{
 				Menu = 0;
-				sprintf((char*)TxBuffer,
-						"frequency(Hz) = 1 \r\nPress a for +1hz \r\nPress s for -1hz \r\nPress d for ON/OFF \r\nPress x for Back to menu \r\n-------------------------------- %s\r\n",RxBuffer);
+				sprintf((char*)TxBuffer, "frequency(Hz) = 1 \r\nPress a for +1hz \r\nPress s for -1hz \r\nPress d for ON/OFF \r\nPress x for Back to menu \r\n-------------------------------- /%s\r\n",RxBuffer);
 				HAL_UART_Transmit_DMA(&huart2, TxBuffer, strlen((char*)TxBuffer));
 			}
 			else if(RxBuffer[0] == '1')
 			{
 				Menu = 1;
 			}
-
+			else
+			{
+				Menu = 3;
+			}
 			break;
 		default :
 			memset(UARTDMAConfig, 0, sizeof(TxBuffer));
 			RxBuffer[1] = '\0';
-			sprintf((char*)TxBuffer, "Out of range, Please Select 0 or 1 %s\r\n-------------------------------- \r\n",RxBuffer);
+			sprintf((char*)TxBuffer, "Out of range, Please Select 0 or 1 /%s\r\n-------------------------------- \r\n",RxBuffer);
 			HAL_UART_Transmit_DMA(&huart2, TxBuffer, strlen((char*)TxBuffer));
+			Menu = 2;
 			break;
 		}
 	}
